@@ -6,20 +6,39 @@ using UnityEngine.Networking;
 
 public class Connection : MonoBehaviour
 {
-    [Tooltip("The end point where the score will be read & handled on your app")][SerializeField] private string _serverURI = "https://example.com/highscore/";
+    public string ReferralLink => _referralLink;
+    public string ReferralId => _referralId;
 
-    private readonly string _playerId = "";
-    private readonly string _secretKey = "";
+    [SerializeField] private string _serverURI = "https://example.com/highscore/";
+
+    private string _playerId = "";
+    private string _secretKey = "";
+    private string _referralLink = "";
+    private string _referralId = "";
 
     private bool _dontSend = false;
 
-    void Start()
+    private void Awake()
+    {
+        
+    }
+
+    private void Start()
     {
 #if UNITY_EDITOR
         _dontSend = true;
 #elif UNITY_WEBGL
-        playerId = URLParameters.GetSearchParameters()["id"];
-        _secretKey = GenerateSecretKey(playerId);
+        if (URLParameters.GetSearchParameters().ContainsKey("start"))
+        {
+            _referralId = URLParameters.GetSearchParameters()["start"];
+        }
+        else if (URLParameters.GetSearchParameters().ContainsKey("id"))
+        {
+            _playerId = URLParameters.GetSearchParameters()["id"];
+        }
+
+        _secretKey = GenerateSecretKey(_playerId);
+        _referralLink = GenerateReferralLink(_playerId);
 #endif
     }
 
@@ -119,6 +138,13 @@ public class Connection : MonoBehaviour
                 return encryptor.TransformFinalBlock(Encoding.UTF8.GetBytes(_secretKey), 0, _secretKey.Length);
             }
         }
+    }
+
+    private string GenerateReferralLink(string playerId)
+    {
+        string referralLink = "https://t.me/<bot_username>?start=" + _playerId;
+
+        return referralLink;
     }
 
     private long Obfuscate(long playerId, int score)
